@@ -4,13 +4,18 @@ from datetime import datetime
 
 train_api_key = "7edf9206960247dfad403efa90a3c88f"
 bus_api_key = "hyTi6EDZxyNFxe5nJefGbm4Ts"
-api_url = "http://lapi.transitchicago.com/api/1.0/"
+bus_api_url = "http://www.ctabustracker.com/bustime/api/v2/getpredictions"
+train_api_url = "http://lapi.transitchicago.com/api/1.0/"
 endpoints = json.loads('{"arrivals" : "ttarrivals.aspx"}')
+stpid_lasalle_north = "1445"
+stpid_lasalle_south = "14763"
+stpid_clark_north = "1898"
+stpid_clark_south = "1852"
 mapid = "40630" # Clark & Division
 
 def getTrainTimes():
     now = datetime.now()
-    response = requests.get(api_url + endpoints['arrivals'] + "?key=" + train_api_key + "&max=8&mapid=" + mapid + "&outputType=JSON")
+    response = requests.get(train_api_url + endpoints['arrivals'] + "?key=" + train_api_key + "&max=8&mapid=" + mapid + "&outputType=JSON")
     if response.status_code != 200:
         print('error')
     else:        
@@ -36,6 +41,61 @@ def getTrainTimes():
                 southbound.append(time)
     return formString([["Northbound Trains ", northbound],["Southbound Trains ", southbound]])
 
+def getBusTimes():
+    
+    lasalle_north_response = requests.get(bus_api_url + "?key=" + bus_api_key + "&rt=156&stpid=" + stpid_lasalle_north + "&format=json").json()['bustime-response']['prd']
+    now = lasalle_north_response[0]['tmstmp']
+    now = datetime.strptime(now,'%Y%m%d %H:%M')
+    lasalle_northbound = []
+    for i in lasalle_north_response:
+        dt = datetime.strptime(i['prdtm'],'%Y%m%d %H:%M')
+        print('traintime', dt)
+        timeDiff = dt - now
+        time = int(timeDiff.seconds / 60)
+        if timeDiff.days < 0 or time==0:
+            print("missedthis one")
+        else:
+            lasalle_northbound.append(time)
+    
+    lasalle_south_response = requests.get(bus_api_url + "?key=" + bus_api_key + "&rt=156&stpid=" + stpid_lasalle_south + "&format=json").json()['bustime-response']['prd']
+    lasalle_southbound = []
+    for i in lasalle_south_response:
+        dt = datetime.strptime(i['prdtm'],'%Y%m%d %H:%M')
+        print('traintime', dt)
+        timeDiff = dt - now
+        time = int(timeDiff.seconds / 60)
+        if timeDiff.days < 0 or time==0:
+            print("missedthis one")
+        else:
+            lasalle_southbound.append(time)
+
+    clark_north_response = requests.get(bus_api_url + "?key=" + bus_api_key + "&rt=22&stpid=" + stpid_clark_north + "&format=json").json()['bustime-response']['prd']
+    clark_northbound = []
+    for i in clark_north_response:
+        dt = datetime.strptime(i['prdtm'],'%Y%m%d %H:%M')
+        print('traintime', dt)
+        timeDiff = dt - now
+        time = int(timeDiff.seconds / 60)
+        if timeDiff.days < 0 or time==0:
+            print("missedthis one")
+        else:
+            clark_northbound.append(time)
+
+    clark_south_response = requests.get(bus_api_url + "?key=" + bus_api_key + "&rt=22&stpid=" + stpid_clark_south + "&format=json").json()['bustime-response']['prd']
+    clark_southbound = []
+    for i in clark_south_response:
+        dt = datetime.strptime(i['prdtm'],'%Y%m%d %H:%M')
+        print('traintime', dt)
+        timeDiff = dt - now
+        time = int(timeDiff.seconds / 60)
+        if timeDiff.days < 0 or time==0:
+            print("missedthis one")
+        else:
+            clark_southbound.append(time)
+    
+    buses = [["Northbound 156 Buses ", lasalle_northbound],["Southbound 156 Buses ", lasalle_southbound],["Northbound 22 Buses ", clark_northbound],["Southbound 22 Buses ", clark_southbound]]
+    return formString(buses)
+
 def formString(trainTimes):
     response = ""
     first = True
@@ -51,4 +111,8 @@ def formString(trainTimes):
         response = response + "minutes.  "
     return response
 
-print(getTrainTimes())
+#print(getTrainTimes())
+#print(requests.get("http://www.ctabustracker.com/bustime/api/v2/getdirections?key=" + bus_api_key + "&rt=22&format=json").json())
+#print(requests.get("http://www.ctabustracker.com/bustime/api/v2/getstops?key=" + bus_api_key + "&rt=22&dir=Northbound&format=json").json())
+#print(requests.get("http://www.ctabustracker.com/bustime/api/v2/getpredictions?key=" + bus_api_key + "&stpid=" + stpid_clark_north + "&format=json").json())
+print(getBusTimes())
